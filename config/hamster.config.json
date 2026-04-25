@@ -1,0 +1,10 @@
+{
+  "ollama": {
+    "baseUrl": "http://localhost:11434",
+    "model": "llama3.2:latest"
+  },
+  "telegram": { "enabled": true, "token": "8623200418:AAFkKnvAChX_hkAYqdbbSVuXzxfU5a9m264","allowedUserIds": [5253620549]  },
+  "discord": { "enabled": false, "token": null },
+  "voice": { "enabled": false },
+  "user": { "name": "Najeem" }
+}

@@ -60,7 +60,7 @@ export class HamsterAssistant {
       `Time: ${new Date().toLocaleString()}`,
       `Model: ${this.config.ollama.model}`,
       this.config.user?.name ? `User: ${this.config.user.name}` : null,
-      `OS: Windows (Git Bash)`,
+      `OS: ${process.platform === "win32" ? "Windows" : process.platform === "darwin" ? "macOS" : "Linux"}`,
     ]
       .filter(Boolean)
       .join(", ");
@@ -83,6 +83,7 @@ export class HamsterAssistant {
       const response = await fetch(`${this.config.ollama.baseUrl}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(120000),
         body: JSON.stringify({
           model: this.config.ollama.model,
           messages,
@@ -142,7 +143,8 @@ export class HamsterAssistant {
           return ask();
         }
         if (msg === "/history") {
-          console.log(chalk.dim(`  ${this.conversationHistory.length / 2} exchanges in memory.\n`));
+          const exchanges = this.conversationHistory.filter((m) => m.role === "user").length;
+          console.log(chalk.dim(`  ${exchanges} exchanges in memory.\n`));
           return ask();
         }
         if (msg === "/model") {

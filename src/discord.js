@@ -15,7 +15,7 @@ export class DiscordBridge {
     this.dmOnly = config.discord.dmOnly ?? true; // default: DMs only (safer)
   }
 
-  start() {
+  async start() {
     if (!this.config.discord?.token) {
       throw new Error("Discord token not set in config.");
     }
@@ -46,13 +46,12 @@ export class DiscordBridge {
       if (!isDM && !isAllowedChannel) return;
 
       // In servers, require prefix
+      let text = message.content.trim();
       if (!isDM) {
         const prefix = this.config.discord.prefix || "!";
         if (!message.content.startsWith(prefix)) return;
-        message.content = message.content.slice(prefix.length).trim();
+        text = message.content.slice(prefix.length).trim();
       }
-
-      const text = message.content.trim();
       if (!text) return;
 
       const channelKey = message.channel.id;
@@ -82,7 +81,7 @@ export class DiscordBridge {
       }
     });
 
-    this.client.login(this.config.discord.token);
+    await this.client.login(this.config.discord.token);
   }
 
   stop() {

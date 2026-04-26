@@ -23,14 +23,11 @@ async function main() {
   console.log(chalk.yellow("\n🐹 Hamster — Local AI Assistant"));
   console.log(chalk.dim(`  Model: ${config.ollama.model} via ${config.ollama.baseUrl}`));
 
-  // Start integrations in parallel
-  const promises = [];
-
   if (config.telegram?.enabled && config.telegram?.token) {
     const { TelegramBridge } = await import("./src/telegram.js");
     const tg = new TelegramBridge(hamster, config);
     try {
-      tg.start();
+      await tg.start();
     } catch (err) {
       console.log(chalk.red(`  Telegram failed: ${err.message}`));
     }
@@ -40,7 +37,7 @@ async function main() {
     const { DiscordBridge } = await import("./src/discord.js");
     const dc = new DiscordBridge(hamster, config);
     try {
-      dc.start();
+      await dc.start();
     } catch (err) {
       console.log(chalk.red(`  Discord failed: ${err.message}`));
     }

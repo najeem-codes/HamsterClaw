@@ -149,7 +149,7 @@ async function main() {
       enabled: true,
       whisperModel: model.trim() || "base",
       whisperBin: "whisper",
-      httpPort: parseInt(port.trim()) || 8765,
+      httpPort: parseInt(port.trim(), 10) || 8765,
     };
   } else {
     config.voice = { enabled: false };
@@ -176,6 +176,7 @@ async function main() {
 }
 
 main().catch((err) => {
+  rl.close();
   console.error(chalk.red(`\nSetup error: ${err.message}\n`));
   process.exit(1);
 });

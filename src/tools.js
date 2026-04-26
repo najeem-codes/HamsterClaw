@@ -10,17 +10,19 @@ const execAsync = promisify(exec);
 
 // ── Blocklist ──────────────────────────────────────────────────────────────
 const BLOCKED_PATTERNS = [
-  /rm\s+-rf\s+[\/~]/i,
-  /rmdir\s+\/s\s+\/q\s+[a-z]:\\/i,
+  /\brm\s+(-\S*[rf]\S*\s+)+[\/~*]/i,           // rm -rf /, rm -fr ~, rm -rf *
+  /\brm\s+(-\S*[rf]\S*\s*){2,}/i,               // rm -r -f variants
+  /(^|[;&|`])\s*(\/bin\/|\/usr\/bin\/)?rm\s+.*-[^\s]*r/i, // /bin/rm -r or chained rm
+  /rmdir\s+\/s/i,
   /format\s+[a-z]:/i,
-  /shutdown/i,
-  /reboot/i,
+  /\b(shutdown|reboot|poweroff|halt)\b/i,
   /del\s+\/[sf]/i,
-  /:\(\)\s*\{.*\}/,
-  /mkfs/i,
+  /:\(\)\s*\{.*\}/,                              // fork bomb
+  /\bmkfs\b/i,
   /dd\s+if=.*of=\/dev/i,
-  /curl.*\|\s*(bash|sh)/i,
-  /wget.*\|\s*(bash|sh)/i,
+  /(curl|wget)[^|]*\|\s*(bash|sh|zsh|fish|python\d*|perl|ruby)\b/i,
+  />\s*\/dev\/(s|h|nv)d[a-z]/i,                 // writing to block devices
+  /\bsudo\s+(rm|rmdir|mkfs|dd|format|shutdown|reboot|poweroff|halt)\b/i,
 ];
 
 function isBlocked(command) {
@@ -33,25 +35,26 @@ function waitForKey() {
   return new Promise((resolve) => {
     const stdin = process.stdin;
     const wasTTY = stdin.isTTY;
-
-    // Collect characters until Enter
     let buf = "";
+
+    const cleanup = (result) => {
+      stdin.removeListener("data", onData);
+      if (wasTTY) stdin.setRawMode(false);
+      stdin.pause();
+      resolve(result);
+    };
 
     const onData = (chunk) => {
       const str = chunk.toString();
       for (const ch of str) {
         if (ch === "\n" || ch === "\r") {
-          stdin.removeListener("data", onData);
-          if (wasTTY) stdin.setRawMode(false);
-          stdin.pause();
-          resolve(buf.trim().toLowerCase());
+          cleanup(buf.trim().toLowerCase());
           return;
         }
-        // Handle backspace
         if (ch === "\x7f" || ch === "\b") {
           buf = buf.slice(0, -1);
         } else if (ch >= " ") {
-          process.stdout.write(ch); // echo the char
+          process.stdout.write(ch);
           buf += ch;
         }
       }
